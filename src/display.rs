@@ -2,21 +2,18 @@ use crate::model::Block;
 use chrono::{DateTime, Utc};
 use colored::Colorize;
 
+const SEPARATOR: &str = "──────────────────────────────────────────────────────────";
+const BORDER: &str = "══════════════════════════════════════════════════════════";
+
 pub fn print_header() {
-    println!(
-        "\n{}",
-        "══════════════════════════════════════════════════════════".bright_cyan()
-    );
+    println!("\n{}", BORDER.bright_cyan());
     println!(
         "{}",
-        "              ⛓  Latest Block Monitor  ⛓"
+        "            ⛓  evm-interactions · EVM explorer  ⛓"
             .bright_white()
             .bold()
     );
-    println!(
-        "{}\n",
-        "══════════════════════════════════════════════════════════".bright_cyan()
-    );
+    println!("{}\n", BORDER.bright_cyan());
 }
 
 pub fn print_block(network_name: &str, block: &Block) {
@@ -55,10 +52,7 @@ pub fn print_block(network_name: &str, block: &Block) {
         "Txns:".bright_yellow(),
         block.transactions.len().to_string().bright_cyan()
     );
-    println!(
-        "  {}",
-        "──────────────────────────────────────────────────────────".dimmed()
-    );
+    println!("  {}", SEPARATOR.dimmed());
 }
 
 pub fn print_error(network_name: &str, error: &str) {
@@ -68,13 +62,10 @@ pub fn print_error(network_name: &str, error: &str) {
         network_name.bright_white().bold(),
         error.red()
     );
-    println!(
-        "  {}",
-        "──────────────────────────────────────────────────────────".dimmed()
-    );
+    println!("  {}", SEPARATOR.dimmed());
 }
 
-fn format_number(n: u64) -> String {
+pub fn format_number(n: u64) -> String {
     let s = n.to_string();
     let mut result = String::with_capacity(s.len() + s.len() / 3);
     for (i, c) in s.chars().rev().enumerate() {

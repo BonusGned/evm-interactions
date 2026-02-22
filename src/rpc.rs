@@ -1,6 +1,7 @@
 use crate::model::{Block, JsonRpcResponse};
 use reqwest::Client;
 use serde_json::json;
+use std::time::Duration;
 
 #[derive(Clone)]
 pub struct RpcClient {
@@ -11,7 +12,7 @@ impl RpcClient {
     pub fn new() -> Self {
         Self {
             client: Client::builder()
-                .timeout(std::time::Duration::from_secs(10))
+                .timeout(Duration::from_secs(10))
                 .build()
                 .expect("failed to build HTTP client"),
         }

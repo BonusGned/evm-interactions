@@ -1,0 +1,159 @@
+# evm-interactions
+
+CLI tool for interacting with EVM-compatible blockchains. Fetch latest block data, manage network configurations, and explore on-chain state — all from your terminal.
+
+> This is an evolving project. The goal is to build a comprehensive CLI toolkit for Web3 interactions: reading blockchain state, decoding transactions, monitoring events, and more.
+
+## Installation
+
+### From source
+
+```bash
+git clone https://github.com/user/evm-interactions.git
+cd evm-interactions
+cargo install --path .
+```
+
+### From GitHub Releases
+
+Download the pre-built binary for your platform from the [Releases](https://github.com/user/evm-interactions/releases) page.
+
+## Quick Start
+
+```bash
+# Initialize config with default networks (Ethereum, BSC, Polygon, Avalanche, Sonic)
+evm-interactions config init
+
+# Fetch latest block from default network
+evm-interactions block
+
+# Fetch from all configured networks
+evm-interactions block --all
+
+# Fetch from a specific network by alias
+evm-interactions block -a eth
+```
+
+## Usage
+
+### Fetch Blocks
+
+```bash
+# Query default network
+evm-interactions block
+
+# Query specific network(s) by alias
+evm-interactions block -a eth
+evm-interactions block -a eth -a bsc
+
+# Query all configured networks
+evm-interactions block --all
+
+# One-off query with custom RPC
+evm-interactions block -a arb --rpc https://arb1.arbitrum.io/rpc
+```
+
+### Manage Config
+
+```bash
+# Initialize config with defaults
+evm-interactions config init
+
+# List all networks
+evm-interactions config list
+
+# Add a new network
+evm-interactions config add -n Arbitrum -a arb -r https://arb1.arbitrum.io/rpc
+
+# Remove a network
+evm-interactions config remove -a arb
+
+# Get/set default network
+evm-interactions config default
+evm-interactions config default -a bsc
+
+# Show config file path
+evm-interactions config path
+
+# Use a custom config file
+evm-interactions -c ./my-config.toml block --all
+```
+
+### Config File
+
+Config is stored at `~/.config/evm-interactions/config.toml` (Linux/macOS) by default.
+
+```toml
+default_network = "eth"
+
+[[networks]]
+name = "Ethereum"
+alias = "eth"
+rpc_url = "https://ethereum-rpc.publicnode.com"
+
+[[networks]]
+name = "BSC"
+alias = "bsc"
+rpc_url = "https://bsc-dataseed1.binance.org"
+
+[[networks]]
+name = "Polygon"
+alias = "matic"
+rpc_url = "https://polygon-bor-rpc.publicnode.com"
+
+[[networks]]
+name = "Avalanche"
+alias = "avax"
+rpc_url = "https://api.avax.network/ext/bc/C/rpc"
+
+[[networks]]
+name = "Sonic"
+alias = "sonic"
+rpc_url = "https://rpc.soniclabs.com"
+```
+
+## Output Example
+
+```
+══════════════════════════════════════════════════════════
+            ⛓  evm-interactions · EVM explorer  ⛓
+══════════════════════════════════════════════════════════
+
+  Network: Ethereum
+  Block:   #24492330
+  Hash:    0x85ebfb41fddb4dc31e9da3e43375141283d68ef2...
+  Time:    2026-02-19 17:16:59 UTC
+  Miner:   0xe688b84b23f322a994a53dbf8e15fa82cdb71127
+  Gas:     14,712,381 / 60,000,000 (24.5%)
+  Base Fee: 0.1549 Gwei
+  Txns:    265
+```
+
+## Roadmap
+
+- [x] Fetch latest block from multiple EVM networks
+- [x] Configurable network list with TOML config
+- [x] Support network aliases (e.g., eth, bsc)
+- [x] CLI with subcommands
+- [ ] Transaction decoding and lookup
+- [ ] Account balance queries
+- [ ] Contract read calls (eth_call)
+- [ ] Event log filtering and monitoring
+- [ ] ENS resolution
+- [ ] Gas price tracking and estimation
+- [ ] Watch mode (live block stream)
+- [ ] Export data to JSON/CSV
+
+## Building
+
+```bash
+# Debug build
+cargo build
+
+# Release build (optimized)
+cargo build --release
+```
+
+## License
+
+MIT
