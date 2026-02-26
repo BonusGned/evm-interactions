@@ -4,10 +4,10 @@ use crate::rpc::RpcClient;
 
 pub async fn execute(
     cfg: &AppConfig,
+    address: String,
     aliases: Vec<String>,
     all: bool,
     rpc: Option<String>,
-    number: Option<String>,
 ) {
     let networks = config::resolve_networks(cfg, aliases, all, rpc);
 
@@ -15,10 +15,6 @@ pub async fn execute(
         eprintln!("No networks to query. Run `evm-interactions config init` to set up defaults.");
         std::process::exit(1);
     }
-
-    let block_id = number
-        .map(|n| parse_block_number(&n))
-        .unwrap_or_else(|| "latest".to_string());
 
     display::print_header();
 
@@ -29,8 +25,8 @@ pub async fn execute(
         .map(|net| {
             let client = client.clone();
             let url = net.rpc_url.clone();
-            let bid = block_id.clone();
-            async move { client.get_block(&url, &bid).await }
+            let addr = address.clone();
+            async move { client.get_balance(&url, &addr).await }
         })
         .collect();
 
@@ -38,18 +34,8 @@ pub async fn execute(
 
     for (network, result) in networks.iter().zip(results) {
         match result {
-            Ok(block) => display::print_block(&network.name, &block),
+            Ok(hex) => display::print_balance(&network.name, &address, &hex),
             Err(err) => display::print_error(&network.name, &err),
         }
-    }
-}
-
-fn parse_block_number(input: &str) -> String {
-    if input.starts_with("0x") || matches!(input, "latest" | "earliest" | "pending") {
-        return input.to_string();
-    }
-    match input.parse::<u64>() {
-        Ok(num) => format!("0x{num:x}"),
-        Err(_) => input.to_string(),
     }
 }

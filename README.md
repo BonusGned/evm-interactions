@@ -11,7 +11,7 @@ CLI tool for interacting with EVM-compatible blockchains. Fetch latest block dat
 ```bash
 git clone https://github.com/user/evm-interactions.git
 cd evm-interactions
-cargo install --path .
+cargo install --path . --locked
 ```
 
 ### From GitHub Releases
@@ -49,8 +49,52 @@ evm-interactions block -a eth -a bsc
 # Query all configured networks
 evm-interactions block --all
 
+# Fetch a specific block by number
+evm-interactions block -n 24500000
+evm-interactions block -n 0x175D7A0 -a eth
+
 # One-off query with custom RPC
 evm-interactions block -a arb --rpc https://arb1.arbitrum.io/rpc
+```
+
+### Transaction Lookup
+
+```bash
+# Look up a transaction by hash (uses default network)
+evm-interactions tx 0xabc123...
+
+# Look up on a specific network
+evm-interactions tx 0xabc123... -a eth
+
+# With custom RPC
+evm-interactions tx 0xabc123... --rpc https://arb1.arbitrum.io/rpc
+```
+
+### Account Balance
+
+```bash
+# Query balance on default network
+evm-interactions balance 0x1234...
+
+# Query on specific network(s)
+evm-interactions balance 0x1234... -a eth
+evm-interactions balance 0x1234... -a eth -a bsc
+
+# Query across all configured networks
+evm-interactions balance 0x1234... --all
+```
+
+### Gas Prices
+
+```bash
+# Show gas price for default network
+evm-interactions gas
+
+# Show gas prices for specific networks
+evm-interactions gas -a eth -a bsc
+
+# Show gas prices for all configured networks
+evm-interactions gas --all
 ```
 
 ### Manage Config
@@ -112,7 +156,9 @@ alias = "sonic"
 rpc_url = "https://rpc.soniclabs.com"
 ```
 
-## Output Example
+## Output Examples
+
+### Block
 
 ```
 ══════════════════════════════════════════════════════════
@@ -129,18 +175,72 @@ rpc_url = "https://rpc.soniclabs.com"
   Txns:    265
 ```
 
+### Transaction
+
+```
+══════════════════════════════════════════════════════════
+            ⛓  evm-interactions · EVM explorer  ⛓
+══════════════════════════════════════════════════════════
+
+  Network:   Ethereum
+  Tx Hash:   0xabc123...
+  Status:    Success ✓
+  Block:     #24492330
+  From:      0x1234...
+  To:        0x5678...
+  Value:     1.5 ETH
+  Gas:       21,000 / 21,000 (100%)
+  Gas Price: 15.5000 Gwei
+  Tx Cost:   0.000326 ETH
+  Nonce:     42
+  Input:     0x (transfer)
+```
+
+### Balance
+
+```
+══════════════════════════════════════════════════════════
+            ⛓  evm-interactions · EVM explorer  ⛓
+══════════════════════════════════════════════════════════
+
+  Network: Ethereum
+  Address: 0x1234...
+  Balance: 1.234567 ETH
+  ──────────────────────────────────────────────────────────
+  Network: BSC
+  Address: 0x1234...
+  Balance: 0.5 ETH
+```
+
+### Gas Prices
+
+```
+══════════════════════════════════════════════════════════
+            ⛓  evm-interactions · EVM explorer  ⛓
+══════════════════════════════════════════════════════════
+
+  Network:   Ethereum
+  Gas Price: 15.5000 Gwei
+  Priority:  1.0000 Gwei
+  Base Fee:  14.5000 Gwei
+  ──────────────────────────────────────────────────────────
+  Network:   BSC
+  Gas Price: 1.0000 Gwei
+```
+
 ## Roadmap
 
 - [x] Fetch latest block from multiple EVM networks
 - [x] Configurable network list with TOML config
 - [x] Support network aliases (e.g., eth, bsc)
 - [x] CLI with subcommands
-- [ ] Transaction decoding and lookup
-- [ ] Account balance queries
+- [x] Fetch specific block by number
+- [x] Transaction lookup
+- [x] Account balance queries
+- [x] Gas price tracking and estimation
 - [ ] Contract read calls (eth_call)
 - [ ] Event log filtering and monitoring
 - [ ] ENS resolution
-- [ ] Gas price tracking and estimation
 - [ ] Watch mode (live block stream)
 - [ ] Export data to JSON/CSV
 

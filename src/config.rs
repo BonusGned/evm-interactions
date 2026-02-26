@@ -92,3 +92,73 @@ pub fn load_or_default(path: &Path) -> AppConfig {
         AppConfig::default()
     }
 }
+
+pub fn resolve_networks(
+    cfg: &AppConfig,
+    aliases: Vec<String>,
+    all: bool,
+    rpc: Option<String>,
+) -> Vec<Network> {
+    if all {
+        return cfg.networks.clone();
+    }
+
+    if !aliases.is_empty() {
+        return aliases
+            .into_iter()
+            .map(|identifier| {
+                if let Some(rpc_url) = &rpc {
+                    Network {
+                        name: identifier.clone(),
+                        alias: identifier,
+                        rpc_url: rpc_url.clone(),
+                    }
+                } else {
+                    cfg.find_network(&identifier).cloned().unwrap_or_else(|| {
+                        eprintln!("Network '{}' not found in config", identifier);
+                        std::process::exit(1);
+                    })
+                }
+            })
+            .collect();
+    }
+
+    if let Some(default_alias) = &cfg.default_network {
+        if let Some(net) = cfg.find_network(default_alias) {
+            return vec![net.clone()];
+        }
+        eprintln!("Default network '{}' not found in config", default_alias);
+        std::process::exit(1);
+    }
+
+    cfg.networks.clone()
+}
+
+pub fn resolve_network(cfg: &AppConfig, alias: Option<String>, rpc: Option<String>) -> Network {
+    if let Some(rpc_url) = rpc {
+        let name = alias.clone().unwrap_or_else(|| "Custom".to_string());
+        return Network {
+            alias: alias.unwrap_or_default(),
+            name,
+            rpc_url,
+        };
+    }
+
+    if let Some(id) = alias {
+        return cfg.find_network(&id).cloned().unwrap_or_else(|| {
+            eprintln!("Network '{}' not found in config", id);
+            std::process::exit(1);
+        });
+    }
+
+    if let Some(default_alias) = &cfg.default_network {
+        if let Some(net) = cfg.find_network(default_alias) {
+            return net.clone();
+        }
+    }
+
+    cfg.networks.first().cloned().unwrap_or_else(|| {
+        eprintln!("No networks configured. Run `evm-interactions config init`.");
+        std::process::exit(1);
+    })
+}

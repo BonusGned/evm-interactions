@@ -20,7 +20,7 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// Fetch latest block from EVM networks
+    /// Fetch block data from EVM networks
     Block {
         /// Network aliases to query (can be specified multiple times)
         #[arg(short, long)]
@@ -31,6 +31,57 @@ pub enum Commands {
         all: bool,
 
         /// One-off RPC URL for a custom network query
+        #[arg(long, requires = "alias")]
+        rpc: Option<String>,
+
+        /// Block number (decimal or hex with 0x prefix; omit for latest)
+        #[arg(short, long)]
+        number: Option<String>,
+    },
+
+    /// Look up a transaction by hash
+    Tx {
+        /// Transaction hash (0x...)
+        hash: String,
+
+        /// Network alias to query
+        #[arg(short, long)]
+        alias: Option<String>,
+
+        /// One-off RPC URL
+        #[arg(long)]
+        rpc: Option<String>,
+    },
+
+    /// Query account balance
+    Balance {
+        /// Account address (0x...)
+        address: String,
+
+        /// Network aliases to query (can be specified multiple times)
+        #[arg(short, long)]
+        alias: Vec<String>,
+
+        /// Query all configured networks
+        #[arg(long)]
+        all: bool,
+
+        /// One-off RPC URL
+        #[arg(long, requires = "alias")]
+        rpc: Option<String>,
+    },
+
+    /// Show current gas prices
+    Gas {
+        /// Network aliases to query (can be specified multiple times)
+        #[arg(short, long)]
+        alias: Vec<String>,
+
+        /// Query all configured networks
+        #[arg(long)]
+        all: bool,
+
+        /// One-off RPC URL
         #[arg(long, requires = "alias")]
         rpc: Option<String>,
     },
