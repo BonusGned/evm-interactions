@@ -65,6 +65,11 @@ fn list(cfg_path: &Path) {
 }
 
 fn add(cfg_path: &Path, name: String, alias: String, rpc: String) {
+    if let Err(e) = reqwest::Url::parse(&rpc) {
+        eprintln!("{} Invalid RPC URL '{}': {}", "✗".bright_red(), rpc, e);
+        std::process::exit(1);
+    }
+
     let mut cfg = load_config(cfg_path);
 
     cfg.add_network(name.clone(), alias.clone(), rpc).unwrap_or_else(|e| {
@@ -135,4 +140,103 @@ fn load_config(cfg_path: &Path) -> AppConfig {
         eprintln!("Run `evm-interactions config init` to create a config file.");
         std::process::exit(1);
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::cli::ConfigCommands;
+    use crate::config::AppConfig;
+    use tempfile::TempDir;
+
+    fn setup() -> (TempDir, std::path::PathBuf) {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("config.toml");
+        (dir, path)
+    }
+
+    #[test]
+    fn test_cli_config_init() {
+        let (_dir, path) = setup();
+        execute(ConfigCommands::Init, &path);
+
+        assert!(path.exists());
+        let cfg = AppConfig::load(&path).unwrap();
+        assert_eq!(cfg.default_network.as_deref(), Some("eth"));
+        assert_eq!(cfg.networks.len(), 5);
+    }
+
+    #[test]
+    fn test_cli_config_add() {
+        let (_dir, path) = setup();
+        execute(ConfigCommands::Init, &path);
+
+        execute(
+            ConfigCommands::Add {
+                name: "Arbitrum".into(),
+                alias: "arb".into(),
+                rpc: "https://arb1.arbitrum.io/rpc".into(),
+            },
+            &path,
+        );
+
+        let cfg = AppConfig::load(&path).unwrap();
+        assert_eq!(cfg.networks.len(), 6);
+        let arb = cfg.find_network("arb").unwrap();
+        assert_eq!(arb.name, "Arbitrum");
+        assert_eq!(arb.rpc_url, "https://arb1.arbitrum.io/rpc");
+    }
+
+    #[test]
+    fn test_cli_config_remove() {
+        let (_dir, path) = setup();
+        execute(ConfigCommands::Init, &path);
+
+        execute(
+            ConfigCommands::Remove {
+                alias: "bsc".into(),
+            },
+            &path,
+        );
+
+        let cfg = AppConfig::load(&path).unwrap();
+        assert_eq!(cfg.networks.len(), 4);
+        assert!(cfg.find_network("bsc").is_none());
+    }
+
+    #[test]
+    fn test_cli_config_default_set() {
+        let (_dir, path) = setup();
+        execute(ConfigCommands::Init, &path);
+
+        execute(
+            ConfigCommands::Default {
+                alias: Some("bsc".into()),
+            },
+            &path,
+        );
+
+        let cfg = AppConfig::load(&path).unwrap();
+        assert_eq!(cfg.default_network.as_deref(), Some("bsc"));
+    }
+
+    #[test]
+    fn test_cli_config_default_show() {
+        let (_dir, path) = setup();
+        execute(ConfigCommands::Init, &path);
+        execute(ConfigCommands::Default { alias: None }, &path);
+    }
+
+    #[test]
+    fn test_cli_config_list() {
+        let (_dir, path) = setup();
+        execute(ConfigCommands::Init, &path);
+        execute(ConfigCommands::List, &path);
+    }
+
+    #[test]
+    fn test_cli_config_path() {
+        let (_dir, path) = setup();
+        execute(ConfigCommands::Path, &path);
+    }
 }

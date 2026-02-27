@@ -53,3 +53,34 @@ fn parse_block_number(input: &str) -> String {
         Err(_) => input.to_string(),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_block_number_hex() {
+        assert_eq!(parse_block_number("0x123"), "0x123");
+        assert_eq!(parse_block_number("0xff"), "0xff");
+    }
+
+    #[test]
+    fn test_parse_block_number_decimal() {
+        assert_eq!(parse_block_number("123"), "0x7b");
+        assert_eq!(parse_block_number("0"), "0x0");
+        assert_eq!(parse_block_number("1000000"), "0xf4240");
+    }
+
+    #[test]
+    fn test_parse_block_number_keywords() {
+        assert_eq!(parse_block_number("latest"), "latest");
+        assert_eq!(parse_block_number("earliest"), "earliest");
+        assert_eq!(parse_block_number("pending"), "pending");
+    }
+
+    #[test]
+    fn test_parse_block_number_invalid() {
+        assert_eq!(parse_block_number("abc"), "abc");
+        assert_eq!(parse_block_number("not_a_number"), "not_a_number");
+    }
+}

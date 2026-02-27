@@ -76,10 +76,7 @@ pub fn print_transaction(
         })
         .unwrap_or_else(|| "Pending".bright_yellow().to_string());
 
-    let to = tx
-        .to
-        .as_deref()
-        .unwrap_or("Contract Creation");
+    let to = tx.to.as_deref().unwrap_or("Contract Creation");
 
     let gas_info = receipt
         .map(|r| {
@@ -116,11 +113,7 @@ pub fn print_transaction(
     );
     println!("  {} {}", "Tx Hash:".bright_yellow(), tx.hash.dimmed());
     println!("  {} {}", "Status:".bright_yellow(), status);
-    println!(
-        "  {} {}",
-        "Block:".bright_yellow(),
-        block.bright_green()
-    );
+    println!("  {} {}", "Block:".bright_yellow(), block.bright_green());
     println!("  {} {}", "From:".bright_yellow(), tx.from.dimmed());
     println!("  {} {}", "To:".bright_yellow(), to.dimmed());
     println!(
@@ -130,11 +123,7 @@ pub fn print_transaction(
     );
     println!("  {} {}", "Gas:".bright_yellow(), gas_info);
     println!("  {} {}", "Gas Price:".bright_yellow(), gas_price);
-    println!(
-        "  {} {} ETH",
-        "Tx Cost:".bright_yellow(),
-        cost
-    );
+    println!("  {} {} ETH", "Tx Cost:".bright_yellow(), cost);
     println!("  {} {}", "Nonce:".bright_yellow(), tx.nonce_dec());
     println!(
         "  {} {}",
@@ -143,11 +132,7 @@ pub fn print_transaction(
     );
 
     if let Some(addr) = receipt.and_then(|r| r.contract_address.as_deref()) {
-        println!(
-            "  {} {}",
-            "Contract:".bright_yellow(),
-            addr.bright_cyan()
-        );
+        println!("  {} {}", "Contract:".bright_yellow(), addr.bright_cyan());
     }
 
     println!("  {}", SEPARATOR.dimmed());
@@ -178,26 +163,14 @@ pub fn print_gas(network_name: &str, gas_price_hex: &str, priority_fee_hex: Opti
         "Network:".bright_yellow(),
         network_name.bright_white().bold()
     );
-    println!(
-        "  {} {:.4} Gwei",
-        "Gas Price:".bright_yellow(),
-        gas_price
-    );
+    println!("  {} {:.4} Gwei", "Gas Price:".bright_yellow(), gas_price);
 
     if let Some(hex) = priority_fee_hex {
         let priority = model::wei_hex_to_gwei(hex);
-        println!(
-            "  {} {:.4} Gwei",
-            "Priority:".bright_yellow(),
-            priority
-        );
+        println!("  {} {:.4} Gwei", "Priority:".bright_yellow(), priority);
         let base = gas_price - priority;
         if base > 0.0 {
-            println!(
-                "  {} {:.4} Gwei",
-                "Base Fee:".bright_yellow(),
-                base
-            );
+            println!("  {} {:.4} Gwei", "Base Fee:".bright_yellow(), base);
         }
     }
 
@@ -235,5 +208,49 @@ fn format_ether(value: f64) -> String {
     } else {
         let s = format!("{value:.6}");
         s.trim_end_matches('0').trim_end_matches('.').to_string()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_format_number_zero() {
+        assert_eq!(format_number(0), "0");
+    }
+
+    #[test]
+    fn test_format_number_small() {
+        assert_eq!(format_number(1), "1");
+        assert_eq!(format_number(999), "999");
+    }
+
+    #[test]
+    fn test_format_number_thousands() {
+        assert_eq!(format_number(1_000), "1,000");
+        assert_eq!(format_number(1_234_567), "1,234,567");
+        assert_eq!(format_number(30_000_000), "30,000,000");
+    }
+
+    #[test]
+    fn test_format_ether_zero() {
+        assert_eq!(format_ether(0.0), "0");
+    }
+
+    #[test]
+    fn test_format_ether_small_value() {
+        assert_eq!(format_ether(0.00001), "0.00001");
+    }
+
+    #[test]
+    fn test_format_ether_normal_value() {
+        assert_eq!(format_ether(1.5), "1.5");
+        assert_eq!(format_ether(1.0), "1");
+    }
+
+    #[test]
+    fn test_format_ether_precise() {
+        assert_eq!(format_ether(1.123456), "1.123456");
     }
 }

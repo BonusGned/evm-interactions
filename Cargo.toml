@@ -18,6 +18,10 @@ futures = "0.3"
 toml = "1"
 dirs = "6"
 
+[dev-dependencies]
+tempfile = "3"
+wiremock = "0.6"
+
 [profile.release]
 strip = true
 lto = true
