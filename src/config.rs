@@ -306,8 +306,7 @@ mod tests {
     #[test]
     fn test_add_network_duplicate_by_name() {
         let mut cfg = make_config();
-        let result =
-            cfg.add_network("Ethereum".into(), "eth2".into(), "https://other.rpc".into());
+        let result = cfg.add_network("Ethereum".into(), "eth2".into(), "https://other.rpc".into());
         assert!(result.is_err());
     }
 

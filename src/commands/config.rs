@@ -72,17 +72,23 @@ fn add(cfg_path: &Path, name: String, alias: String, rpc: String) {
 
     let mut cfg = load_config(cfg_path);
 
-    cfg.add_network(name.clone(), alias.clone(), rpc).unwrap_or_else(|e| {
-        eprintln!("Error: {e}");
-        std::process::exit(1);
-    });
+    cfg.add_network(name.clone(), alias.clone(), rpc)
+        .unwrap_or_else(|e| {
+            eprintln!("Error: {e}");
+            std::process::exit(1);
+        });
 
     cfg.save(cfg_path).unwrap_or_else(|e| {
         eprintln!("Error: {e}");
         std::process::exit(1);
     });
 
-    println!("{} Added network '{}' with alias '{}'", "✓".bright_green(), name, alias);
+    println!(
+        "{} Added network '{}' with alias '{}'",
+        "✓".bright_green(),
+        name,
+        alias
+    );
 }
 
 fn remove(cfg_path: &Path, identifier: String) {
@@ -108,14 +114,21 @@ fn default_network(cfg_path: &Path, identifier: Option<String>) {
 
     match identifier {
         Some(id) => {
-            let found = cfg.find_network(&id).map(|n| (n.alias.clone(), n.name.clone()));
+            let found = cfg
+                .find_network(&id)
+                .map(|n| (n.alias.clone(), n.name.clone()));
             if let Some((alias, name)) = found {
                 cfg.default_network = Some(alias.clone());
                 cfg.save(cfg_path).unwrap_or_else(|e| {
                     eprintln!("Error: {e}");
                     std::process::exit(1);
                 });
-                println!("{} Default network set to '{}' ({})", "✓".bright_green(), name, alias);
+                println!(
+                    "{} Default network set to '{}' ({})",
+                    "✓".bright_green(),
+                    name,
+                    alias
+                );
             } else {
                 eprintln!("Network '{}' not found in config", id);
                 std::process::exit(1);
@@ -124,7 +137,11 @@ fn default_network(cfg_path: &Path, identifier: Option<String>) {
         None => match &cfg.default_network {
             Some(alias) => {
                 if let Some(net) = cfg.find_network(alias) {
-                    println!("Default network: {} [{}]", net.name.bright_yellow(), net.alias.bright_magenta());
+                    println!(
+                        "Default network: {} [{}]",
+                        net.name.bright_yellow(),
+                        net.alias.bright_magenta()
+                    );
                 } else {
                     println!("Default network alias '{}' not found", alias);
                 }
