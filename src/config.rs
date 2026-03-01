@@ -225,14 +225,15 @@ mod tests {
     fn test_default_config_creation() {
         let cfg = AppConfig::default();
         assert_eq!(cfg.default_network.as_deref(), Some("eth"));
-        assert_eq!(cfg.networks.len(), 5);
+        assert_eq!(cfg.networks.len(), 6);
 
         let names: Vec<&str> = cfg.networks.iter().map(|n| n.name.as_str()).collect();
         assert!(names.contains(&"Ethereum"));
-        assert!(names.contains(&"BSC"));
+        assert!(names.contains(&"BNB Smart Chain"));
         assert!(names.contains(&"Polygon"));
         assert!(names.contains(&"Avalanche"));
         assert!(names.contains(&"Sonic"));
+        assert!(names.contains(&"Arbitrum"));
     }
 
     #[test]
@@ -445,7 +446,7 @@ mod tests {
     fn test_load_or_default_missing_file() {
         let cfg = load_or_default(Path::new("/tmp/nonexistent/config.toml"));
         assert_eq!(cfg.default_network.as_deref(), Some("eth"));
-        assert_eq!(cfg.networks.len(), 5);
+        assert_eq!(cfg.networks.len(), 6);
     }
 
     #[test]

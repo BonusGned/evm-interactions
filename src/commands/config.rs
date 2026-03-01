@@ -180,7 +180,7 @@ mod tests {
         assert!(path.exists());
         let cfg = AppConfig::load(&path).unwrap();
         assert_eq!(cfg.default_network.as_deref(), Some("eth"));
-        assert_eq!(cfg.networks.len(), 5);
+        assert_eq!(cfg.networks.len(), 6);
     }
 
     #[test]
@@ -190,18 +190,18 @@ mod tests {
 
         execute(
             ConfigCommands::Add {
-                name: "Arbitrum".into(),
-                alias: "arb".into(),
-                rpc: "https://arb1.arbitrum.io/rpc".into(),
+                name: "Optimism".into(),
+                alias: "opt".into(),
+                rpc: "https://mainnet.optimism.io".into(),
             },
             &path,
         );
 
         let cfg = AppConfig::load(&path).unwrap();
-        assert_eq!(cfg.networks.len(), 6);
-        let arb = cfg.find_network("arb").unwrap();
-        assert_eq!(arb.name, "Arbitrum");
-        assert_eq!(arb.rpc_url, "https://arb1.arbitrum.io/rpc");
+        assert_eq!(cfg.networks.len(), 7);
+        let opt = cfg.find_network("opt").unwrap();
+        assert_eq!(opt.name, "Optimism");
+        assert_eq!(opt.rpc_url, "https://mainnet.optimism.io");
     }
 
     #[test]
@@ -217,7 +217,7 @@ mod tests {
         );
 
         let cfg = AppConfig::load(&path).unwrap();
-        assert_eq!(cfg.networks.len(), 4);
+        assert_eq!(cfg.networks.len(), 5);
         assert!(cfg.find_network("bsc").is_none());
     }
 
