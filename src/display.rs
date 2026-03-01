@@ -1,4 +1,4 @@
-use crate::model::{self, Block, Transaction, TransactionReceipt};
+use crate::model::{self, Block, Log, Transaction, TransactionReceipt};
 use chrono::{DateTime, Utc};
 use colored::Colorize;
 
@@ -174,6 +174,92 @@ pub fn print_gas(network_name: &str, gas_price_hex: &str, priority_fee_hex: Opti
         }
     }
 
+    println!("  {}", SEPARATOR.dimmed());
+}
+
+pub fn print_call_result(network_name: &str, address: &str, data: &str, result: &str) {
+    let data_preview = if data.len() > 10 { &data[..10] } else { data };
+
+    println!(
+        "  {} {}",
+        "Network:".bright_yellow(),
+        network_name.bright_white().bold()
+    );
+    println!("  {} {}", "Contract:".bright_yellow(), address.dimmed());
+    println!(
+        "  {} {}...",
+        "Calldata:".bright_yellow(),
+        data_preview.dimmed()
+    );
+    println!("  {} {}", "Result:".bright_yellow(), result.bright_green());
+    println!("  {}", SEPARATOR.dimmed());
+}
+
+pub fn print_log(network_name: &str, log: &Log) {
+    let block = log
+        .block_number_dec()
+        .map(|n| format!("#{}", format_number(n)))
+        .unwrap_or_else(|| "pending".to_string());
+
+    let index = log
+        .log_index_dec()
+        .map(|n| n.to_string())
+        .unwrap_or_else(|| "?".to_string());
+
+    println!(
+        "  {} {}",
+        "Network:".bright_yellow(),
+        network_name.bright_white().bold()
+    );
+    println!(
+        "  {} {}  {} {}",
+        "Block:".bright_yellow(),
+        block.bright_green(),
+        "Index:".bright_yellow(),
+        index
+    );
+    println!("  {} {}", "Address:".bright_yellow(), log.address.dimmed());
+
+    for (i, topic) in log.topics.iter().enumerate() {
+        println!(
+            "  {} {}",
+            format!("Topic[{i}]:").bright_yellow(),
+            topic.dimmed()
+        );
+    }
+
+    println!(
+        "  {} {}",
+        "Data:".bright_yellow(),
+        log.data_preview().dimmed()
+    );
+
+    if let Some(tx) = &log.transaction_hash {
+        println!("  {} {}", "Tx:".bright_yellow(), tx.dimmed());
+    }
+
+    println!("  {}", SEPARATOR.dimmed());
+}
+
+pub fn print_logs_summary(count: usize) {
+    println!(
+        "  {} {} event(s) found",
+        "Total:".bright_yellow(),
+        count.to_string().bright_cyan()
+    );
+}
+
+pub fn print_ens_result(name: &str, address: &str) {
+    println!(
+        "  {} {}",
+        "Name:".bright_yellow(),
+        name.bright_white().bold()
+    );
+    println!(
+        "  {} {}",
+        "Address:".bright_yellow(),
+        address.bright_green()
+    );
     println!("  {}", SEPARATOR.dimmed());
 }
 

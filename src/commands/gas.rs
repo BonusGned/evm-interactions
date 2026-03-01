@@ -1,8 +1,16 @@
 use crate::config::{self, AppConfig};
 use crate::display;
+use crate::export::{self, OutputFormat};
+use crate::model;
 use crate::rpc::RpcClient;
 
-pub async fn execute(cfg: &AppConfig, aliases: Vec<String>, all: bool, rpc: Option<String>) {
+pub async fn execute(
+    cfg: &AppConfig,
+    aliases: Vec<String>,
+    all: bool,
+    rpc: Option<String>,
+    output: OutputFormat,
+) {
     let networks = config::resolve_networks(cfg, aliases, all, rpc);
 
     if networks.is_empty() {
@@ -10,7 +18,11 @@ pub async fn execute(cfg: &AppConfig, aliases: Vec<String>, all: bool, rpc: Opti
         std::process::exit(1);
     }
 
-    display::print_header();
+    if output == OutputFormat::Table {
+        display::print_header();
+    } else if output == OutputFormat::Csv {
+        println!("{}", export::gas_csv_header());
+    }
 
     let client = RpcClient::new();
 
@@ -31,8 +43,31 @@ pub async fn execute(cfg: &AppConfig, aliases: Vec<String>, all: bool, rpc: Opti
 
     for (network, (price_result, priority_fee)) in networks.iter().zip(results) {
         match price_result {
-            Ok(hex) => display::print_gas(&network.name, &hex, priority_fee.as_deref()),
-            Err(err) => display::print_error(&network.name, &err),
+            Ok(hex) => {
+                let gas_gwei = model::wei_hex_to_gwei(&hex);
+                let priority_gwei = priority_fee.as_deref().map(model::wei_hex_to_gwei);
+                match output {
+                    OutputFormat::Table => {
+                        display::print_gas(&network.name, &hex, priority_fee.as_deref());
+                    }
+                    OutputFormat::Json => {
+                        println!(
+                            "{}",
+                            export::gas_to_json(&network.name, gas_gwei, priority_gwei)
+                        );
+                    }
+                    OutputFormat::Csv => {
+                        println!(
+                            "{}",
+                            export::gas_to_csv(&network.name, gas_gwei, priority_gwei)
+                        );
+                    }
+                }
+            }
+            Err(err) => match output {
+                OutputFormat::Table => display::print_error(&network.name, &err),
+                _ => eprintln!("Error [{}]: {err}", network.name),
+            },
         }
     }
 }

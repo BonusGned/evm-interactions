@@ -1,6 +1,6 @@
 [package]
 name = "evm-interactions"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 description = "CLI tool for interacting with EVM-compatible blockchains"
 license = "MIT"
@@ -17,6 +17,8 @@ chrono = "0.4"
 futures = "0.3"
 toml = "1"
 dirs = "6"
+sha3 = "0.10"
+csv = "1"
 
 [dev-dependencies]
 tempfile = "3"

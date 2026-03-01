@@ -86,13 +86,13 @@ pub fn default_networks() -> Vec<Network> {
             rpc_url: "https://ethereum-rpc.publicnode.com".into(),
         },
         Network {
-            name: "BSC".into(),
+            name: "BNB Smart Chain".into(),
             alias: "bsc".into(),
             rpc_url: "https://bsc-dataseed1.binance.org".into(),
         },
         Network {
             name: "Polygon".into(),
-            alias: "matic".into(),
+            alias: "pol".into(),
             rpc_url: "https://polygon-bor-rpc.publicnode.com".into(),
         },
         Network {
@@ -104,6 +104,11 @@ pub fn default_networks() -> Vec<Network> {
             name: "Sonic".into(),
             alias: "sonic".into(),
             rpc_url: "https://rpc.soniclabs.com".into(),
+        },
+        Network {
+            name: "Arbitrum".into(),
+            alias: "arb".into(),
+            rpc_url: "https://arb1.arbitrum.io/rpc".into(),
         },
     ]
 }

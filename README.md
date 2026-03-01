@@ -97,6 +97,78 @@ evm-interactions gas -a eth -a bsc
 evm-interactions gas --all
 ```
 
+### Contract Read Calls
+
+```bash
+# Call a contract function (raw calldata)
+evm-interactions call 0xContractAddress 0x12345678
+
+# Call on a specific network
+evm-interactions call 0xContractAddress 0x12345678 -a eth
+
+# Call at a specific block
+evm-interactions call 0xContractAddress 0x12345678 -b 24500000
+
+# Output as JSON
+evm-interactions -o json call 0xContractAddress 0x12345678
+```
+
+### Event Logs
+
+```bash
+# Fetch logs from a contract
+evm-interactions logs 0xContractAddress --from 24500000 --to latest
+
+# Filter by topic
+evm-interactions logs 0xContractAddress --topic 0xddf252ad... --from 24500000 --to 24500100
+
+# Output as CSV
+evm-interactions -o csv logs 0xContractAddress --from 24500000 --to latest -a eth
+```
+
+### ENS Resolution
+
+```bash
+# Resolve an ENS name
+evm-interactions ens vitalik.eth
+
+# Resolve on a specific network
+evm-interactions ens vitalik.eth -a eth
+
+# Output as JSON
+evm-interactions -o json ens vitalik.eth
+```
+
+### Watch Mode
+
+```bash
+# Watch for new blocks in real time (default: 12s interval)
+evm-interactions block --watch
+
+# Watch with custom interval
+evm-interactions block --watch --interval 5
+
+# Watch a specific network
+evm-interactions block --watch -a eth
+
+# Watch all networks
+evm-interactions block --watch --all
+```
+
+### Export Data
+
+```bash
+# Output any command as JSON
+evm-interactions -o json block
+evm-interactions -o json balance 0x1234...
+evm-interactions -o json gas --all
+
+# Output any command as CSV
+evm-interactions -o csv block --all
+evm-interactions -o csv balance 0x1234... --all
+evm-interactions -o csv gas --all
+```
+
 ### Manage Config
 
 ```bash
@@ -228,6 +300,36 @@ rpc_url = "https://rpc.soniclabs.com"
   Gas Price: 1.0000 Gwei
 ```
 
+### Contract Call
+
+```
+══════════════════════════════════════════════════════════
+            ⛓  evm-interactions · EVM explorer  ⛓
+══════════════════════════════════════════════════════════
+
+  Network:   Ethereum
+  Contract:  0xdAC17F958D2ee523a2206206994597C13D831ec7
+  Calldata:  0x18160ddd...
+  Result:    0x000000000000000000000000000000000000000000000000000000174876e800
+```
+
+### ENS Resolution
+
+```
+══════════════════════════════════════════════════════════
+            ⛓  evm-interactions · EVM explorer  ⛓
+══════════════════════════════════════════════════════════
+
+  Name:    vitalik.eth
+  Address: 0xd8da6bf26964af9d7eed9e03e53415d37aa96045
+```
+
+### JSON Output
+
+```json
+{"network":"Ethereum","number":24492330,"hash":"0x85ebfb41...","timestamp":1739983019,"miner":"0xe688b84b...","gasUsed":14712381,"gasLimit":60000000,"baseFeeGwei":0.1549,"txCount":265}
+```
+
 ## Roadmap
 
 - [x] Fetch latest block from multiple EVM networks
@@ -238,11 +340,11 @@ rpc_url = "https://rpc.soniclabs.com"
 - [x] Transaction lookup
 - [x] Account balance queries
 - [x] Gas price tracking and estimation
-- [ ] Contract read calls (eth_call)
-- [ ] Event log filtering and monitoring
-- [ ] ENS resolution
-- [ ] Watch mode (live block stream)
-- [ ] Export data to JSON/CSV
+- [x] Contract read calls (eth_call)
+- [x] Event log filtering and monitoring
+- [x] ENS resolution
+- [x] Watch mode (live block stream)
+- [x] Export data to JSON/CSV
 
 ## Building
 

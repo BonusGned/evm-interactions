@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 fn hex_to_u64(hex: &str) -> u64 {
     u64::from_str_radix(hex.trim_start_matches("0x"), 16).unwrap_or(0)
@@ -16,19 +16,19 @@ pub fn wei_hex_to_gwei(hex: &str) -> f64 {
     hex_to_u128(hex) as f64 / 1e9
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct JsonRpcResponse<T> {
     pub result: Option<T>,
     pub error: Option<JsonRpcError>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct JsonRpcError {
     pub code: i64,
     pub message: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Block {
     pub number: String,
@@ -73,7 +73,7 @@ impl Block {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
     pub hash: String,
@@ -124,7 +124,7 @@ impl Transaction {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionReceipt {
     pub status: Option<String>,
@@ -155,6 +155,38 @@ impl TransactionReceipt {
             .map(|hex| hex_to_u128(hex))
             .unwrap_or(0);
         (gas_price * self.gas_used_dec() as u128) as f64 / 1e18
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Log {
+    pub address: String,
+    pub topics: Vec<String>,
+    pub data: String,
+    pub block_number: Option<String>,
+    pub transaction_hash: Option<String>,
+    pub log_index: Option<String>,
+    pub transaction_index: Option<String>,
+}
+
+impl Log {
+    pub fn block_number_dec(&self) -> Option<u64> {
+        self.block_number.as_ref().map(|hex| hex_to_u64(hex))
+    }
+
+    pub fn log_index_dec(&self) -> Option<u64> {
+        self.log_index.as_ref().map(|hex| hex_to_u64(hex))
+    }
+
+    pub fn data_preview(&self) -> &str {
+        if self.data == "0x" || self.data.is_empty() {
+            "0x (empty)"
+        } else if self.data.len() > 66 {
+            &self.data[..66]
+        } else {
+            &self.data
+        }
     }
 }
 
@@ -381,5 +413,63 @@ mod tests {
         let mut r = make_receipt();
         r.effective_gas_price = None;
         assert_eq!(r.tx_cost_ether(), 0.0);
+    }
+
+    fn make_log() -> Log {
+        Log {
+            address: "0xcontract".to_string(),
+            topics: vec!["0xtopic0".to_string(), "0xtopic1".to_string()],
+            data:
+                "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+                    .to_string(),
+            block_number: Some("0x100".to_string()),
+            transaction_hash: Some("0xtxhash".to_string()),
+            log_index: Some("0xa".to_string()),
+            transaction_index: Some("0x5".to_string()),
+        }
+    }
+
+    #[test]
+    fn test_log_block_number_dec() {
+        assert_eq!(make_log().block_number_dec(), Some(256));
+    }
+
+    #[test]
+    fn test_log_block_number_pending() {
+        let mut log = make_log();
+        log.block_number = None;
+        assert_eq!(log.block_number_dec(), None);
+    }
+
+    #[test]
+    fn test_log_index_dec() {
+        assert_eq!(make_log().log_index_dec(), Some(10));
+    }
+
+    #[test]
+    fn test_log_index_none() {
+        let mut log = make_log();
+        log.log_index = None;
+        assert_eq!(log.log_index_dec(), None);
+    }
+
+    #[test]
+    fn test_log_data_preview_long() {
+        let log = make_log();
+        assert_eq!(log.data_preview().len(), 66);
+    }
+
+    #[test]
+    fn test_log_data_preview_empty() {
+        let mut log = make_log();
+        log.data = "0x".to_string();
+        assert_eq!(log.data_preview(), "0x (empty)");
+    }
+
+    #[test]
+    fn test_log_data_preview_short() {
+        let mut log = make_log();
+        log.data = "0xabcdef".to_string();
+        assert_eq!(log.data_preview(), "0xabcdef");
     }
 }

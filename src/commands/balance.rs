@@ -1,5 +1,7 @@
 use crate::config::{self, AppConfig};
 use crate::display;
+use crate::export::{self, OutputFormat};
+use crate::model;
 use crate::rpc::RpcClient;
 
 pub async fn execute(
@@ -8,6 +10,7 @@ pub async fn execute(
     aliases: Vec<String>,
     all: bool,
     rpc: Option<String>,
+    output: OutputFormat,
 ) {
     let networks = config::resolve_networks(cfg, aliases, all, rpc);
 
@@ -16,7 +19,11 @@ pub async fn execute(
         std::process::exit(1);
     }
 
-    display::print_header();
+    if output == OutputFormat::Table {
+        display::print_header();
+    } else if output == OutputFormat::Csv {
+        println!("{}", export::balance_csv_header());
+    }
 
     let client = RpcClient::new();
 
@@ -34,8 +41,28 @@ pub async fn execute(
 
     for (network, result) in networks.iter().zip(results) {
         match result {
-            Ok(hex) => display::print_balance(&network.name, &address, &hex),
-            Err(err) => display::print_error(&network.name, &err),
+            Ok(hex) => {
+                let balance_eth = model::wei_hex_to_ether(&hex);
+                match output {
+                    OutputFormat::Table => display::print_balance(&network.name, &address, &hex),
+                    OutputFormat::Json => {
+                        println!(
+                            "{}",
+                            export::balance_to_json(&network.name, &address, balance_eth)
+                        );
+                    }
+                    OutputFormat::Csv => {
+                        println!(
+                            "{}",
+                            export::balance_to_csv(&network.name, &address, balance_eth)
+                        );
+                    }
+                }
+            }
+            Err(err) => match output {
+                OutputFormat::Table => display::print_error(&network.name, &err),
+                _ => eprintln!("Error [{}]: {err}", network.name),
+            },
         }
     }
 }

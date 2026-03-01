@@ -1,4 +1,4 @@
-use crate::model::{Block, JsonRpcResponse, Transaction, TransactionReceipt};
+use crate::model::{Block, JsonRpcResponse, Log, Transaction, TransactionReceipt};
 use reqwest::Client;
 use serde::de::DeserializeOwned;
 use serde_json::json;
@@ -85,6 +85,40 @@ impl RpcClient {
     pub async fn get_max_priority_fee(&self, rpc_url: &str) -> Result<String, String> {
         self.call(rpc_url, "eth_maxPriorityFeePerGas", json!([]))
             .await
+    }
+
+    pub async fn eth_call(
+        &self,
+        rpc_url: &str,
+        to: &str,
+        data: &str,
+        block: &str,
+    ) -> Result<String, String> {
+        self.call(
+            rpc_url,
+            "eth_call",
+            json!([{"to": to, "data": data}, block]),
+        )
+        .await
+    }
+
+    pub async fn get_logs(
+        &self,
+        rpc_url: &str,
+        address: &str,
+        topics: &[String],
+        from_block: &str,
+        to_block: &str,
+    ) -> Result<Vec<Log>, String> {
+        let mut filter = json!({
+            "address": address,
+            "fromBlock": from_block,
+            "toBlock": to_block,
+        });
+        if !topics.is_empty() {
+            filter["topics"] = json!(topics);
+        }
+        self.call(rpc_url, "eth_getLogs", json!([filter])).await
     }
 }
 
@@ -304,5 +338,95 @@ mod tests {
         let client = RpcClient::new();
         let fee = client.get_max_priority_fee(&server.uri()).await.unwrap();
         assert_eq!(fee, "0x77359400");
+    }
+
+    #[tokio::test]
+    async fn test_rpc_eth_call_success() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "jsonrpc": "2.0",
+                "id": 1,
+                "result": "0x000000000000000000000000000000000000000000000000000000000000002a"
+            })))
+            .mount(&server)
+            .await;
+
+        let client = RpcClient::new();
+        let result = client
+            .eth_call(&server.uri(), "0xcontract", "0x12345678", "latest")
+            .await
+            .unwrap();
+        assert!(result.starts_with("0x"));
+        assert_eq!(result.len(), 66);
+    }
+
+    #[tokio::test]
+    async fn test_rpc_eth_call_revert() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "jsonrpc": "2.0",
+                "id": 1,
+                "error": { "code": 3, "message": "execution reverted" }
+            })))
+            .mount(&server)
+            .await;
+
+        let client = RpcClient::new();
+        let result = client
+            .eth_call(&server.uri(), "0xcontract", "0x12345678", "latest")
+            .await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("execution reverted"));
+    }
+
+    #[tokio::test]
+    async fn test_rpc_get_logs_success() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "jsonrpc": "2.0",
+                "id": 1,
+                "result": [{
+                    "address": "0xcontract",
+                    "topics": ["0xtopic0"],
+                    "data": "0xdata",
+                    "blockNumber": "0x100",
+                    "transactionHash": "0xtxhash",
+                    "logIndex": "0x0",
+                    "transactionIndex": "0x0"
+                }]
+            })))
+            .mount(&server)
+            .await;
+
+        let client = RpcClient::new();
+        let logs = client
+            .get_logs(&server.uri(), "0xcontract", &[], "0x100", "latest")
+            .await
+            .unwrap();
+        assert_eq!(logs.len(), 1);
+        assert_eq!(logs[0].address, "0xcontract");
+    }
+
+    #[tokio::test]
+    async fn test_rpc_get_logs_empty() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "jsonrpc": "2.0",
+                "id": 1,
+                "result": []
+            })))
+            .mount(&server)
+            .await;
+
+        let client = RpcClient::new();
+        let logs = client
+            .get_logs(&server.uri(), "0xcontract", &[], "0x0", "latest")
+            .await
+            .unwrap();
+        assert!(logs.is_empty());
     }
 }

@@ -44,6 +44,7 @@ Unit tests cover individual functions and data structures, verifying their logic
 * **`test_parse_block_number_hex`**: The `parse_block_number` function should return the value unchanged if the input is `0x123` or `0xff`.
 * **`test_parse_block_number_decimal`**: When a decimal number is input (e.g., `123`), the function should return its hex representation (`0x7b`). Also tests `0` → `0x0` and `1000000` → `0xf4240`.
 * **`test_parse_block_number_keywords`**: When `latest`, `earliest`, or `pending` are input, return them as strings unchanged.
+* **`test_parse_block_number_safe_finalized`**: When `safe` or `finalized` are input, return them unchanged (EIP-3675 block tags).
 * **`test_parse_block_number_invalid`**: When an invalid string is input (neither a number nor a keyword), it should return the original string (which will subsequently fail during the RPC call, as intended).
 
 ### 1.3. Model Utilities (`src/model.rs`)
@@ -79,7 +80,17 @@ Unit tests cover individual functions and data structures, verifying their logic
 * **`test_receipt_tx_cost_ether`**: Correctly computes `gas_price * gas_used` in ether.
 * **`test_receipt_tx_cost_no_gas_price`**: Returns `0.0` when gas price is absent.
 
-### 1.4. Display Formatting (`src/display.rs`)
+### 1.4. Log Model (`src/model.rs`)
+
+* **`test_log_block_number_dec`**: `Log::block_number_dec()` correctly converts hex block number to decimal.
+* **`test_log_block_number_pending`**: Returns `None` when `block_number` is absent.
+* **`test_log_index_dec`**: `Log::log_index_dec()` correctly converts hex log index.
+* **`test_log_index_none`**: Returns `None` when `log_index` is absent.
+* **`test_log_data_preview_long`**: Long data is truncated to 66 characters (32 bytes + `0x` prefix).
+* **`test_log_data_preview_empty`**: Data `0x` returns `"0x (empty)"`.
+* **`test_log_data_preview_short`**: Short data is returned as-is.
+
+### 1.5. Display Formatting (`src/display.rs`)
 
 * **`test_format_number_zero`**: `format_number(0)` → `"0"`.
 * **`test_format_number_small`**: Numbers under 1000 have no comma separators.
@@ -88,6 +99,29 @@ Unit tests cover individual functions and data structures, verifying their logic
 * **`test_format_ether_small_value`**: Very small values (< 0.0001) are formatted with up to 10 decimal places, trailing zeros trimmed.
 * **`test_format_ether_normal_value`**: Normal values are formatted with up to 6 decimal places, trailing zeros trimmed.
 * **`test_format_ether_precise`**: Full precision values are preserved.
+
+### 1.6. ENS Module (`src/ens.rs`)
+
+* **`test_namehash_empty`**: Empty string returns 32 zero bytes (the ENS root node).
+* **`test_namehash_eth`**: `"eth"` returns the known keccak256-based hash `93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae`.
+* **`test_namehash_full_domain`**: `"vitalik.eth"` returns the known hash `ee6c4522aab0003e8d14cd40a6af439055fd2577951148c14b6cea9a53475835`.
+* **`test_encode_resolver_call`**: The encoded calldata starts with `0x0178b8bf` (resolver selector) and is 74 chars long (10 hex selector + 64 hex hash).
+* **`test_encode_addr_call`**: The encoded calldata starts with `0x3b3b57de` (addr selector) and is 74 chars long.
+* **`test_parse_address_from_result`**: A valid 66-char hex result (32-byte ABI word) is parsed into a `0x`-prefixed 40-char address.
+* **`test_parse_address_zero`**: An all-zero result returns `None` (no address set).
+* **`test_parse_address_too_short`**: A result shorter than 64 hex chars returns `None`.
+
+### 1.7. Export Module (`src/export.rs`)
+
+* **`test_output_format_parse`**: Parsing `"table"`, `"json"`, `"csv"` (case-insensitive) into `OutputFormat` enum; invalid values return `Err`.
+* **`test_block_to_json`**: Verify JSON output contains `network`, `number`, `hash` fields with correct values.
+* **`test_tx_to_json`**: Verify JSON output contains `network`, `hash`, `status`, `from`, `to` fields.
+* **`test_balance_to_json`**: Verify JSON output contains `network`, `address`, `balanceEth`.
+* **`test_gas_to_json`**: Verify JSON output contains `gasPriceGwei`, `priorityFeeGwei`, `baseFeeGwei` with correct arithmetic.
+* **`test_log_to_json`**: Verify JSON output contains `address`, `blockNumber`, `topics`, `data`.
+* **`test_ens_to_json`**: Verify JSON output contains `name` and `address`.
+* **`test_block_to_csv`**: Verify CSV line starts with network name and contains block number.
+* **`test_balance_to_csv`**: Verify CSV line is `"network,address,balance"`.
 
 ---
 
@@ -121,6 +155,10 @@ HTTP responses are mocked using the `wiremock` crate to avoid making real networ
 * **`test_rpc_get_balance_success`**: Mock a valid `eth_getBalance` response and verify the returned hex string.
 * **`test_rpc_get_gas_price_success`**: Mock a valid `eth_gasPrice` response and verify the returned hex string.
 * **`test_rpc_get_max_priority_fee_success`**: Mock a valid `eth_maxPriorityFeePerGas` response and verify the returned hex string.
+* **`test_rpc_eth_call_success`**: Mock a valid `eth_call` response and verify the returned hex string (32-byte ABI word).
+* **`test_rpc_eth_call_revert`**: Mock server returns JSON-RPC error with code 3 ("execution reverted"). Verify the client propagates the error.
+* **`test_rpc_get_logs_success`**: Mock a valid `eth_getLogs` response with one log entry. Verify deserialization of address, topics, data, block number.
+* **`test_rpc_get_logs_empty`**: Mock `eth_getLogs` returning an empty array. Verify the client returns an empty `Vec<Log>`.
 
 ---
 
