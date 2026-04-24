@@ -4,16 +4,24 @@ use serde::de::DeserializeOwned;
 use serde_json::json;
 use std::time::Duration;
 
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
+
 #[derive(Clone)]
 pub struct RpcClient {
     client: Client,
+}
+
+impl Default for RpcClient {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl RpcClient {
     pub fn new() -> Self {
         Self {
             client: Client::builder()
-                .timeout(Duration::from_secs(10))
+                .timeout(REQUEST_TIMEOUT)
                 .build()
                 .expect("failed to build HTTP client"),
         }

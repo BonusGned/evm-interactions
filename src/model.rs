@@ -37,7 +37,7 @@ pub struct Block {
     pub gas_used: String,
     pub gas_limit: String,
     pub base_fee_per_gas: Option<String>,
-    pub transactions: Vec<serde_json::Value>,
+    pub transactions: Vec<String>,
     pub miner: String,
 }
 
@@ -59,9 +59,7 @@ impl Block {
     }
 
     pub fn base_fee_gwei(&self) -> Option<f64> {
-        self.base_fee_per_gas
-            .as_ref()
-            .map(|hex| hex_to_u128(hex) as f64 / 1e9)
+        self.base_fee_per_gas.as_ref().map(|hex| wei_hex_to_gwei(hex))
     }
 
     pub fn gas_usage_percent(&self) -> f64 {
@@ -85,14 +83,11 @@ pub struct Transaction {
     pub gas_price: Option<String>,
     pub input: String,
     pub nonce: String,
-    #[serde(rename = "type")]
-    #[allow(dead_code)]
-    pub tx_type: Option<String>,
 }
 
 impl Transaction {
     pub fn value_ether(&self) -> f64 {
-        hex_to_u128(&self.value) as f64 / 1e18
+        wei_hex_to_ether(&self.value)
     }
 
     pub fn gas_limit_dec(&self) -> u64 {
@@ -100,9 +95,7 @@ impl Transaction {
     }
 
     pub fn gas_price_gwei(&self) -> Option<f64> {
-        self.gas_price
-            .as_ref()
-            .map(|hex| hex_to_u128(hex) as f64 / 1e9)
+        self.gas_price.as_ref().map(|hex| wei_hex_to_gwei(hex))
     }
 
     pub fn nonce_dec(&self) -> u64 {
@@ -145,7 +138,7 @@ impl TransactionReceipt {
     pub fn effective_gas_price_gwei(&self) -> Option<f64> {
         self.effective_gas_price
             .as_ref()
-            .map(|hex| hex_to_u128(hex) as f64 / 1e9)
+            .map(|hex| wei_hex_to_gwei(hex))
     }
 
     pub fn tx_cost_ether(&self) -> f64 {
@@ -293,7 +286,6 @@ mod tests {
             gas_price: Some("0x3b9aca00".to_string()),
             input: "0xa9059cbb0000".to_string(),
             nonce: "0xa".to_string(),
-            tx_type: Some("0x2".to_string()),
         }
     }
 

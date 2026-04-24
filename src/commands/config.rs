@@ -97,8 +97,12 @@ fn remove(cfg_path: &Path, identifier: String) {
     if !cfg.remove_network(&identifier) {
         eprintln!("Network '{}' not found", identifier);
         std::process::exit(1);
-    } else if cfg.default_network.as_deref() == Some(&identifier) {
-        cfg.default_network = None;
+    }
+
+    if let Some(ref default) = cfg.default_network {
+        if cfg.find_network(default).is_none() {
+            cfg.default_network = None;
+        }
     }
 
     cfg.save(cfg_path).unwrap_or_else(|e| {

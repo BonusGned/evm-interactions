@@ -129,6 +129,25 @@ pub fn block_to_csv(network: &str, block: &Block) -> String {
     )
 }
 
+pub fn tx_csv_header() -> &'static str {
+    "network,hash,blockNumber,from,to,valueEth,nonce"
+}
+
+pub fn tx_to_csv(network: &str, tx: &Transaction) -> String {
+    format!(
+        "{},{},{},{},{},{},{}",
+        network,
+        tx.hash,
+        tx.block_number_dec()
+            .map(|n| n.to_string())
+            .unwrap_or_default(),
+        tx.from,
+        tx.to.as_deref().unwrap_or(""),
+        tx.value_ether(),
+        tx.nonce_dec(),
+    )
+}
+
 pub fn balance_csv_header() -> &'static str {
     "network,address,balanceEth"
 }
@@ -199,7 +218,6 @@ mod tests {
             gas_price: Some("0x3b9aca00".to_string()),
             input: "0x".to_string(),
             nonce: "0xa".to_string(),
-            tx_type: Some("0x2".to_string()),
         }
     }
 

@@ -34,18 +34,8 @@ pub async fn execute(
                     );
                 }
                 OutputFormat::Csv => {
-                    println!(
-                        "{},{},{},{},{},{},{}",
-                        network.name,
-                        tx.hash,
-                        tx.block_number_dec()
-                            .map(|n| n.to_string())
-                            .unwrap_or_default(),
-                        tx.from,
-                        tx.to.as_deref().unwrap_or(""),
-                        tx.value_ether(),
-                        tx.nonce_dec(),
-                    );
+                    println!("{}", export::tx_csv_header());
+                    println!("{}", export::tx_to_csv(&network.name, &tx));
                 }
             }
         }

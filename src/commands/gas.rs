@@ -32,9 +32,11 @@ pub async fn execute(
             let client = client.clone();
             let url = net.rpc_url.clone();
             async move {
-                let price = client.get_gas_price(&url).await;
-                let priority = client.get_max_priority_fee(&url).await.ok();
-                (price, priority)
+                let (price, priority) = tokio::join!(
+                    client.get_gas_price(&url),
+                    client.get_max_priority_fee(&url)
+                );
+                (price, priority.ok())
             }
         })
         .collect();

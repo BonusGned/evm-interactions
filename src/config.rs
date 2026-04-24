@@ -142,22 +142,21 @@ pub fn resolve_networks(
 ) -> Vec<Network> {
     if all {
         return cfg.networks.clone();
-    } else if !aliases.is_empty() {
+    }
+
+    if !aliases.is_empty() {
         return aliases
             .into_iter()
-            .map(|identifier| {
-                if let Some(rpc_url) = &rpc {
-                    Network {
-                        name: identifier.clone(),
-                        alias: identifier,
-                        rpc_url: rpc_url.clone(),
-                    }
-                } else {
-                    cfg.find_network(&identifier).cloned().unwrap_or_else(|| {
-                        eprintln!("Network '{}' not found in config", identifier);
-                        std::process::exit(1);
-                    })
-                }
+            .map(|identifier| match &rpc {
+                Some(rpc_url) => Network {
+                    name: identifier.clone(),
+                    alias: identifier,
+                    rpc_url: rpc_url.clone(),
+                },
+                None => cfg.find_network(&identifier).cloned().unwrap_or_else(|| {
+                    eprintln!("Network '{}' not found in config", identifier);
+                    std::process::exit(1);
+                }),
             })
             .collect();
     }
@@ -181,12 +180,16 @@ pub fn resolve_network(cfg: &AppConfig, alias: Option<String>, rpc: Option<Strin
             name,
             rpc_url,
         };
-    } else if let Some(id) = alias {
+    }
+
+    if let Some(id) = alias {
         return cfg.find_network(&id).cloned().unwrap_or_else(|| {
             eprintln!("Network '{}' not found in config", id);
             std::process::exit(1);
         });
-    } else if let Some(default_alias) = &cfg.default_network {
+    }
+
+    if let Some(default_alias) = &cfg.default_network {
         if let Some(net) = cfg.find_network(default_alias) {
             return net.clone();
         }

@@ -274,15 +274,17 @@ pub fn print_error(network_name: &str, error: &str) {
 }
 
 pub fn format_number(n: u64) -> String {
-    let s = n.to_string();
-    let mut result = String::with_capacity(s.len() + s.len() / 3);
-    for (i, c) in s.chars().rev().enumerate() {
-        if i > 0 && i % 3 == 0 {
+    let digits = n.to_string();
+    let bytes = digits.as_bytes();
+    let len = bytes.len();
+    let mut result = String::with_capacity(len + len.saturating_sub(1) / 3);
+    for (i, &b) in bytes.iter().enumerate() {
+        if i > 0 && (len - i).is_multiple_of(3) {
             result.push(',');
         }
-        result.push(c);
+        result.push(b as char);
     }
-    result.chars().rev().collect()
+    result
 }
 
 fn format_ether(value: f64) -> String {

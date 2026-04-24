@@ -1,4 +1,5 @@
 use sha3::{Digest, Keccak256};
+use std::fmt::Write;
 
 pub const ENS_REGISTRY: &str = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e";
 const RESOLVER_SELECTOR: &str = "0x0178b8bf";
@@ -9,24 +10,24 @@ pub fn namehash(name: &str) -> [u8; 32] {
     if name.is_empty() {
         return node;
     }
+    let mut combined = [0u8; 64];
     for label in name.rsplit('.') {
         let label_hash = Keccak256::digest(label.as_bytes());
-        let mut combined = Vec::with_capacity(64);
-        combined.extend_from_slice(&node);
-        combined.extend_from_slice(&label_hash);
-        node = Keccak256::digest(&combined).into();
+        combined[..32].copy_from_slice(&node);
+        combined[32..].copy_from_slice(&label_hash);
+        node = Keccak256::digest(combined).into();
     }
     node
 }
 
 pub fn encode_resolver_call(name: &str) -> String {
     let hash = namehash(name);
-    format!("{}{}", RESOLVER_SELECTOR, hex::encode(&hash))
+    format!("{}{}", RESOLVER_SELECTOR, hex_encode(&hash))
 }
 
 pub fn encode_addr_call(name: &str) -> String {
     let hash = namehash(name);
-    format!("{}{}", ADDR_SELECTOR, hex::encode(&hash))
+    format!("{}{}", ADDR_SELECTOR, hex_encode(&hash))
 }
 
 pub fn parse_address_from_result(hex_result: &str) -> Option<String> {
@@ -42,13 +43,11 @@ pub fn parse_address_from_result(hex_result: &str) -> Option<String> {
 }
 
 fn hex_encode(bytes: &[u8]) -> String {
-    bytes.iter().map(|b| format!("{b:02x}")).collect()
-}
-
-mod hex {
-    pub fn encode(bytes: &[u8]) -> String {
-        super::hex_encode(bytes)
+    let mut s = String::with_capacity(bytes.len() * 2);
+    for b in bytes {
+        let _ = write!(s, "{b:02x}");
     }
+    s
 }
 
 #[cfg(test)]
