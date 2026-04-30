@@ -59,7 +59,9 @@ impl Block {
     }
 
     pub fn base_fee_gwei(&self) -> Option<f64> {
-        self.base_fee_per_gas.as_ref().map(|hex| wei_hex_to_gwei(hex))
+        self.base_fee_per_gas
+            .as_ref()
+            .map(|hex| wei_hex_to_gwei(hex))
     }
 
     pub fn gas_usage_percent(&self) -> f64 {

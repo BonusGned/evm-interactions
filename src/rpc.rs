@@ -5,6 +5,7 @@ use serde_json::json;
 use std::time::Duration;
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
+const MAX_HTTP_ERROR_BODY_CHARS: usize = 512;
 
 #[derive(Clone)]
 pub struct RpcClient {
@@ -47,6 +48,17 @@ impl RpcClient {
             .send()
             .await
             .map_err(|e| format!("request failed: {e}"))?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let body = response.text().await.unwrap_or_default();
+            let body = truncate_http_error_body(&body);
+            return if body.is_empty() {
+                Err(format!("HTTP error {status}"))
+            } else {
+                Err(format!("HTTP error {status}: {body}"))
+            };
+        }
 
         let rpc_response: JsonRpcResponse<T> = response
             .json()
@@ -128,6 +140,18 @@ impl RpcClient {
         }
         self.call(rpc_url, "eth_getLogs", json!([filter])).await
     }
+}
+
+fn truncate_http_error_body(body: &str) -> String {
+    let mut truncated = String::new();
+    for (index, ch) in body.chars().enumerate() {
+        if index == MAX_HTTP_ERROR_BODY_CHARS {
+            truncated.push_str("...");
+            return truncated;
+        }
+        truncated.push(ch);
+    }
+    truncated
 }
 
 #[cfg(test)]
@@ -249,7 +273,38 @@ mod tests {
         let client = RpcClient::new();
         let result = client.get_block(&server.uri(), "latest").await;
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("failed to parse response"));
+        assert!(result.unwrap_err().contains("HTTP error"));
+    }
+
+    #[tokio::test]
+    async fn test_rpc_http_error_reports_status() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .respond_with(ResponseTemplate::new(503).set_body_string("Service Unavailable"))
+            .mount(&server)
+            .await;
+
+        let client = RpcClient::new();
+        let result = client.get_block(&server.uri(), "latest").await;
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.contains("HTTP error"));
+        assert!(err.contains("503"));
+    }
+
+    #[tokio::test]
+    async fn test_rpc_http_error_truncates_long_body() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .respond_with(ResponseTemplate::new(502).set_body_string("x".repeat(1_000)))
+            .mount(&server)
+            .await;
+
+        let client = RpcClient::new();
+        let result = client.get_block(&server.uri(), "latest").await;
+        let err = result.unwrap_err();
+        assert!(err.ends_with("..."));
+        assert!(err.len() < 600);
     }
 
     #[tokio::test]

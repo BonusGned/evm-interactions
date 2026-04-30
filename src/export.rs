@@ -1,4 +1,5 @@
 use crate::model::{Block, Log, Transaction, TransactionReceipt};
+use std::borrow::Cow;
 use std::str::FromStr;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -114,11 +115,11 @@ pub fn block_csv_header() -> &'static str {
 pub fn block_to_csv(network: &str, block: &Block) -> String {
     format!(
         "{},{},{},{},{},{},{},{},{}",
-        network,
+        csv_field(network),
         block.number_dec(),
-        block.hash,
+        csv_field(&block.hash),
         block.timestamp_dec(),
-        block.miner,
+        csv_field(&block.miner),
         block.gas_used_dec(),
         block.gas_limit_dec(),
         block
@@ -136,13 +137,13 @@ pub fn tx_csv_header() -> &'static str {
 pub fn tx_to_csv(network: &str, tx: &Transaction) -> String {
     format!(
         "{},{},{},{},{},{},{}",
-        network,
-        tx.hash,
+        csv_field(network),
+        csv_field(&tx.hash),
         tx.block_number_dec()
             .map(|n| n.to_string())
             .unwrap_or_default(),
-        tx.from,
-        tx.to.as_deref().unwrap_or(""),
+        csv_field(&tx.from),
+        csv_field(tx.to.as_deref().unwrap_or("")),
         tx.value_ether(),
         tx.nonce_dec(),
     )
@@ -153,7 +154,11 @@ pub fn balance_csv_header() -> &'static str {
 }
 
 pub fn balance_to_csv(network: &str, address: &str, balance_eth: f64) -> String {
-    format!("{network},{address},{balance_eth}")
+    format!(
+        "{},{},{balance_eth}",
+        csv_field(network),
+        csv_field(address)
+    )
 }
 
 pub fn gas_csv_header() -> &'static str {
@@ -165,7 +170,10 @@ pub fn gas_to_csv(network: &str, gas_gwei: f64, priority_gwei: Option<f64>) -> S
     let base_str = priority_gwei
         .map(|p| format!("{:.4}", gas_gwei - p))
         .unwrap_or_default();
-    format!("{network},{gas_gwei:.4},{priority_str},{base_str}")
+    format!(
+        "{},{gas_gwei:.4},{priority_str},{base_str}",
+        csv_field(network)
+    )
 }
 
 pub fn log_csv_header() -> &'static str {
@@ -176,18 +184,26 @@ pub fn log_to_csv(network: &str, log: &Log) -> String {
     let topic0 = log.topics.first().map(|t| t.as_str()).unwrap_or("");
     format!(
         "{},{},{},{},{},{},{}",
-        network,
-        log.address,
+        csv_field(network),
+        csv_field(&log.address),
         log.block_number_dec()
             .map(|n| n.to_string())
             .unwrap_or_default(),
-        log.transaction_hash.as_deref().unwrap_or(""),
+        csv_field(log.transaction_hash.as_deref().unwrap_or("")),
         log.log_index_dec()
             .map(|n| n.to_string())
             .unwrap_or_default(),
-        topic0,
-        log.data_preview(),
+        csv_field(topic0),
+        csv_field(log.data_preview()),
     )
+}
+
+fn csv_field(value: &str) -> Cow<'_, str> {
+    if !value.contains([',', '"', '\n', '\r']) {
+        return Cow::Borrowed(value);
+    }
+
+    Cow::Owned(format!("\"{}\"", value.replace('"', "\"\"")))
 }
 
 #[cfg(test)]
@@ -271,6 +287,29 @@ mod tests {
     fn test_balance_to_csv() {
         let csv = balance_to_csv("Ethereum", "0xaddr", 1.5);
         assert_eq!(csv, "Ethereum,0xaddr,1.5");
+    }
+
+    #[test]
+    fn test_balance_to_csv_escapes_values() {
+        let csv = balance_to_csv("Network, One", "0xaddr", 1.5);
+        assert_eq!(csv, "\"Network, One\",0xaddr,1.5");
+    }
+
+    #[test]
+    fn test_log_to_csv_escapes_quotes_and_newlines() {
+        let log = crate::model::Log {
+            address: "0xcontract".to_string(),
+            topics: vec!["topic \"quoted\"".to_string()],
+            data: "0xdata\nnext".to_string(),
+            block_number: Some("0x100".to_string()),
+            transaction_hash: Some("0xtxhash".to_string()),
+            log_index: Some("0x0".to_string()),
+            transaction_index: Some("0x0".to_string()),
+        };
+
+        let csv = log_to_csv("Ethereum", &log);
+        assert!(csv.contains("\"topic \"\"quoted\"\"\""));
+        assert!(csv.contains("\"0xdata\nnext\""));
     }
 
     #[test]
